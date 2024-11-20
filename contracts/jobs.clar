@@ -18,6 +18,9 @@
 ;; Keep track of the total number of jobs
 (define-data-var job-count uint u0)
 
+;; Keep track of application count per job
+(define-map job-application-count { job-id: uint } { count: uint })
+
 ;; Constants
 (define-constant ERR-INVALID-SALARY u1)
 (define-constant ERR-JOB-NOT-FOUND u2)
@@ -39,6 +42,7 @@
         salary: salary,
         is-active: true,
         created-at: block-height })
+    (map-set job-application-count { job-id: new-job-id } { count: u0 })
     (var-set job-count new-job-id)
     (ok new-job-id)))
 
@@ -54,6 +58,11 @@
               { cover-letter: cover-letter,
                 status: "pending",
                 applied-at: block-height })
+            (match (map-get? job-application-count { job-id: job-id })
+              count-data (map-set job-application-count
+                            { job-id: job-id }
+                            { count: (+ (get count count-data) u1) })
+              (map-set job-application-count { job-id: job-id } { count: u1 }))
             (ok true))
           (err ERR-ALREADY-APPLIED))
         (err ERR-JOB-NOT-ACTIVE))
@@ -100,6 +109,8 @@
 (define-read-only (get-job-count)
   (var-get job-count))
 
-;; Read-only function to get all applications for a job
-(define-read-only (get-job-applications (job-id uint))
-  (map-get? applications { job-id: job-id }))
+;; Read-only function to get the number of applications for a job
+(define-read-only (get-job-application-count (job-id uint))
+  (match (map-get? job-application-count { job-id: job-id })
+    count-data (ok (get count count-data))
+    (err ERR-JOB-NOT-FOUND)))
