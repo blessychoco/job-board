@@ -164,4 +164,3 @@
   (match (map-get? job-application-count { job-id: job-id })
     count-data (ok (get count count-data))
     (err ERR-JOB-NOT-FOUND)))
-
